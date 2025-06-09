@@ -1,13 +1,18 @@
 import express from "express"
 import dotenv from 'dotenv'
 import connectDB from "./configs/db.js"
+import authRouter from "./routes/authRoute.js"
 
 dotenv.config()
 const app = express()
 
+app.use(express.json())
+
 app.get("/", (req, res) => {
     res.send("Server Connected")
 })
+
+app.use("/api/auth", authRouter)
 
 const PORT = process.env.PORT
 
