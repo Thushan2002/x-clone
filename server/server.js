@@ -5,6 +5,7 @@ import authRouter from "./routes/authRoute.js"
 import cookieParser from "cookie-parser"
 import userRouter from "./routes/userRoute.js"
 import cloudinary from "cloudinary"
+import postRouter from "./routes/postRoutes.js"
 
 dotenv.config()
 cloudinary.config({
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 // App Routes
 app.use("/api/auth", authRouter)
 app.use("/api/user", userRouter)
+app.use("/api/post", postRouter)
 
 const PORT = process.env.PORT
 
