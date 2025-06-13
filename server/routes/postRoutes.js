@@ -1,10 +1,11 @@
 import express, { Router } from "express"
 import protectedRoute from "../middleware/protectedRoutes.js"
-import { createPost, deletePost, getAllPosts, likeAndDislike, postComment } from "../controllers/postController.js"
+import { createPost, deletePost, getAllPosts, getLikedPosts, likeAndDislike, postComment } from "../controllers/postController.js"
 
 const postRouter = express.Router()
 
 postRouter.get("/allPosts", protectedRoute, getAllPosts)
+postRouter.get("/likedPosts/:id", protectedRoute, getLikedPosts)
 postRouter.post("/create", protectedRoute, createPost)
 postRouter.delete("/delete/:id", protectedRoute, deletePost)
 postRouter.post("/comment/:id", protectedRoute, postComment)
