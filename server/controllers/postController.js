@@ -1,3 +1,4 @@
+import Notification from "../models/notificationModel.js";
 import Post from "../models/postModel.js";
 import User from "../models/user.model.js";
 import cloudinary from "cloudinary"
@@ -54,6 +55,65 @@ export const deletePost = async (req, res) => {
 
     } catch (error) {
         console.log(`Error in deletePost Controller ${error}`);
+        return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
+
+export const postComment = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { text } = req.body
+        const post = await Post.findById({ _id: id })
+        if (!post) {
+            return res.status(404).json({ error: "Post not Found" })
+        }
+        const comment = {
+            text,
+            user: req.user._id
+        }
+        post.comments.push(comment)
+        await post.save()
+        const newNotification = new Notification({
+            type: "comment",
+            from: req.user._id,
+            to: post.user
+        })
+        await newNotification.save()
+        return res.status(200).json({ message: "Comment Posted", post })
+    } catch (error) {
+        console.log(`Error in postComment Controller ${error}`);
+        return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
+
+export const likeAndDislike = async (req, res) => {
+    try {
+        const { id } = req.params
+        const userId = req.user._id
+        const post = await Post.findById({ _id: id })
+        if (!post) {
+            return res.status(404).json({ error: "Post not Found" })
+        }
+        const isAlreadyLiked = await post.likes.includes(userId)
+        if (!isAlreadyLiked) {
+            await Post.findByIdAndUpdate({ _id: id }, { $push: { likes: userId } })
+            return res.status(200).json({ message: "You Liked the post" })
+        }
+        await Post.findByIdAndUpdate({ _id: id }, { $pull: { likes: userId } })
+        await post.save()
+
+        // notifiaction
+        const newNotification = new Notification({
+            type: "like",
+            from: userId,
+            to: post.user
+        })
+        await newNotification.save()
+        return res.status(200).json({ message: "You Unliked the post" })
+
+
+    } catch (error) {
+        console.log(`Error in likeAndDislike Controller ${error}`);
         return res.status(500).json({ error: "Internal Server Error" })
     }
 }
