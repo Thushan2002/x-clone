@@ -117,3 +117,24 @@ export const likeAndDislike = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" })
     }
 }
+
+export const getAllPosts = async (req, res) => {
+    try {
+        const { userId } = req.user._id
+        const posts = await Post.find().sort({ createdAt: -1 }).populate({
+            path: "user",
+            select: "-password"
+        }).populate({
+            path: "comments.user",
+            select: "-password"
+        })
+        if (posts.length === 0) {
+            return res.status(404).json([])
+        }
+        return res.status(200).json({ message: "Fetched Succfully", posts })
+
+    } catch (error) {
+        console.log(`Error in getAllPosts Controller ${error}`);
+        return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
