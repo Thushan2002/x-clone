@@ -164,3 +164,54 @@ export const getLikedPosts = async (req, res) => {
         return res.status(500).json({ error: "Internal Server Error" })
     }
 }
+
+export const getFollowingPosts = async (req, res) => {
+    try {
+        const userId = req.user._id
+        const user = await User.findById({ _id: userId })
+        if (!user) {
+            return res.status(404).json({ error: "No user found" })
+        }
+        const following = user.following;
+        const feedPosts = await Post.find({ user: { $in: following } }).sort({ createdAt: -1 }).populate({
+            path: "user",
+            select: "-password"
+        }).populate({
+            path: "comments.user",
+            select: ["-password", "-email", "-following", "-followers", "-bio", "-link"]
+        })
+        if (!feedPosts) {
+            return res.status(404).json({ error: "No Feed Posts found" })
+        }
+        return res.status(200).json(feedPosts)
+    } catch (error) {
+        console.log(`Error in getFollowingPosts Controller ${error}`);
+        return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
+
+export const getUserPostsByUsername = async (req, res) => {
+    try {
+        const { username } = req.params
+        const user = await User.findOne({ username })
+        if (!user) {
+            return res.status(404).json({ error: "No user found" })
+        }
+
+        const userPosts = await Post.find({ user: user._id }).sort({ createdAt: -1 }).populate({
+            path: "user",
+            select: "-password"
+        }).populate({
+            path: "comments.user",
+            select: ["-password", "-email", "-following", "-followers", "-bio", "-link"]
+        })
+        if (!userPosts) {
+            return res.status(404).json({ error: "No Posts found" })
+        }
+        return res.status(200).json(userPosts)
+
+    } catch (error) {
+        console.log(`Error in getUserPostsByUsername Controller ${error}`);
+        return res.status(500).json({ error: "Internal Server Error" })
+    }
+}
