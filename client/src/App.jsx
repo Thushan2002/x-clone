@@ -3,10 +3,12 @@ import { Routes, Route } from "react-router-dom";
 import Signup from "./pages/auth/Signup";
 import Login from "./pages/auth/Login";
 import HomePage from "./pages/home/HomePage";
+import Sidebar from "./components/common/Sidebar";
 
 const App = () => {
   return (
-    <div>
+    <div className="flex max-w-6xl mx-auto">
+      <Sidebar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/signup" element={<Signup />} />
