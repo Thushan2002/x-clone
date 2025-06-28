@@ -1,4 +1,4 @@
-import express from "express"
+import express, { urlencoded } from "express"
 import dotenv from 'dotenv'
 import connectDB from "./configs/db.js"
 import authRouter from "./routes/authRoute.js"
@@ -7,6 +7,7 @@ import userRouter from "./routes/userRoute.js"
 import cloudinary from "cloudinary"
 import postRouter from "./routes/postRoutes.js"
 import notificationRouter from "./routes/notificationRoutes.js"
+import cors from "cors"
 
 dotenv.config()
 cloudinary.config({
@@ -18,6 +19,13 @@ const app = express()
 
 app.use(express.json())
 app.use(cookieParser())
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}))
+app.use(urlencoded({
+    extended: true
+}))
 
 app.get("/", (req, res) => {
     res.send("Server Connected")
