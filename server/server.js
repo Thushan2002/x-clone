@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRouter)
 app.use("/api/user", userRouter)
 app.use("/api/post", postRouter)
-app.use("/api/post", notificationRouter)
+app.use("/api/notification", notificationRouter)
 
 const PORT = process.env.PORT
 
