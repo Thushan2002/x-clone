@@ -50,11 +50,11 @@ const userSchema = mongoose.Schema({
         type: String,
         default: ""
     },
-    likedPosts: {
+    likedPosts: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",
         default: []
-    }
+    }]
 }, { timestamps: true })
 
 const User = mongoose.model("User", userSchema)
