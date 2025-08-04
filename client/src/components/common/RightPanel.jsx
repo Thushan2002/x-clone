@@ -1,14 +1,42 @@
 import { Link } from "react-router-dom";
 import RightPanelSkeleton from "../skeleton/RightPanelSkeleton";
 import { USERS_FOR_RIGHT_PANEL } from "../../utils/db/dummy";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import baseUrl from "../../constatant/url";
+import useFollow from "../../hooks/useFollow.js";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
 const RightPanel = () => {
-  const isLoading = false;
+  const { follow, isPending } = useFollow();
+  const { data: suggestedUsers, isLoading } = useQuery({
+    queryKey: ["suggestedUsers"],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/user/suggested`, {
+          method: "GET",
+          credentials: "include", // to include cookies in the request
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await res.json();
+        if (data.error) return null;
+        if (!res.ok) {
+          throw new Error(data.error || "Something went wrong");
+        }
+        return data;
+      } catch (error) {
+        console.log("error", error.message);
+        throw new Error(error);
+      }
+    },
+    retry: false,
+  });
 
   return (
     <div className="hidden lg:block my-4 mx-2">
       <div className="bg-[#16181C] p-4 rounded-md sticky top-2">
-        <p className="font-bold">Who to follow</p>
+        <p className="font-bold mb-4">Who to follow</p>
         <div className="flex flex-col gap-4">
           {/* item */}
           {isLoading && (
@@ -19,8 +47,10 @@ const RightPanel = () => {
               <RightPanelSkeleton />
             </>
           )}
+          {!suggestedUsers && <p>No New Users to Follow...</p>}
           {!isLoading &&
-            USERS_FOR_RIGHT_PANEL?.map((user) => (
+            suggestedUsers &&
+            suggestedUsers?.map((user) => (
               <Link
                 to={`/profile/${user.username}`}
                 className="flex items-center justify-between gap-4"
@@ -43,8 +73,11 @@ const RightPanel = () => {
                 <div>
                   <button
                     className="btn bg-white text-black hover:bg-white hover:opacity-90 rounded-full btn-sm"
-                    onClick={(e) => e.preventDefault()}>
-                    Follow
+                    onClick={(e) => {
+                      e.preventDefault();
+                      follow(user._id);
+                    }}>
+                    {isPending ? <LoadingSpinner size="sm" /> : "Follow"}
                   </button>
                 </div>
               </Link>
