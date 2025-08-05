@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import baseUrl from "../../constatant/url";
 import LoadingSpinner from "./LoadingSpinner";
 import toast from "react-hot-toast";
+import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post }) => {
   const { data: authUser } = useQuery({ queryKey: ["authUser"] });
@@ -42,7 +43,7 @@ const Post = ({ post }) => {
   });
 
   // Like to posts
-  // 🔥 Local state to manage likes
+
   const [likes, setLikes] = useState(post.likes || []);
   const [liked, setLiked] = useState(post.likes.includes(authUser._id));
 
@@ -65,8 +66,8 @@ const Post = ({ post }) => {
     },
     onSuccess: ({ updatedLikes, message }) => {
       toast.success(message);
-      setLikes(updatedLikes); // 🔥 Update local likes
-      setLiked(updatedLikes.includes(authUser._id)); // 🔥 Update like state
+      setLikes(updatedLikes);
+      setLiked(updatedLikes.includes(authUser._id));
 
       // Optional: Keep cache in sync, but won't re-render Post unless refetched
       queryClient.setQueryData(["posts"], (old) => {
@@ -81,23 +82,53 @@ const Post = ({ post }) => {
     },
   });
 
+  // comment to post
+
   const [comment, setComment] = useState("");
+  const [comments, setComments] = useState(post.comments || []);
+
+  const { mutate: commentPost, isPending: isCommenting } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${baseUrl}/api/post/comment/${post._id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: comment }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to comment post");
+      }
+      return data;
+    },
+    onSuccess: ({ message }) => {
+      toast.success(message);
+      setComment("");
+      setComments();
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error(error.message || "Failed to like post");
+    },
+  });
 
   const postOwner = post.user;
   const isLiked = post.likes.includes(authUser._id);
 
   const isMyPost = authUser._id === post.user._id;
 
-  const formattedDate = "1h";
-
-  const isCommenting = false;
+  const formattedDate = formatPostDate(post.createdAt);
 
   const handleDeletePost = (postId) => {
     deletePost(postId);
   };
 
   const handlePostComment = (e) => {
-    e.preventDefault();
+    if (isCommenting) return;
+    commentPost();
   };
 
   const handleLikePost = () => {
@@ -107,7 +138,7 @@ const Post = ({ post }) => {
   useEffect(() => {
     setLikes(post.likes);
     setLiked(post.likes.includes(authUser._id));
-  }, [post.likes, authUser._id]);
+  }, [post.likes, comments, authUser._id]);
 
   return (
     <>
