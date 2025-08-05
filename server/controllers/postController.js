@@ -88,30 +88,36 @@ export const postComment = async (req, res) => {
 
 export const likeAndDislike = async (req, res) => {
     try {
-        const { id } = req.params
+        const { id: postId } = req.params
         const userId = req.user._id
-        const post = await Post.findById({ _id: id })
+        const post = await Post.findById({ _id: postId })
         if (!post) {
             return res.status(404).json({ error: "Post not Found" })
         }
         const isAlreadyLiked = await post.likes.includes(userId)
-        if (!isAlreadyLiked) {
-            await Post.findByIdAndUpdate({ _id: id }, { $push: { likes: userId } })
-            await User.findByIdAndUpdate({ _id: userId }, { $push: { likedPosts: id } })
-            return res.status(200).json({ message: "You Liked the post" })
-        }
-        await Post.findByIdAndUpdate({ _id: id }, { $pull: { likes: userId } })
-        await User.findByIdAndUpdate({ _id: userId }, { $pull: { likedPosts: id } })
-        await post.save()
+        if (isAlreadyLiked) {
+            await Post.updateOne({ _id: postId }, { $pull: { likes: userId } })
+            await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } })
 
-        // notifiaction
-        const newNotification = new Notification({
-            type: "like",
-            from: userId,
-            to: post.user
-        })
-        await newNotification.save()
-        return res.status(200).json({ message: "You Unliked the post" })
+            const updatedLikes = post.likes.filter((id) => id.toString() !== userId.toString())
+            return res.status(200).json({ message: "You Unliked the post", updatedLikes })
+        }
+        else {
+            post.likes.push(userId)
+            await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } })
+            await post.save()
+
+            // notifiaction
+            const newNotification = new Notification({
+                from: userId,
+                to: post.user,
+                type: "like"
+            })
+            await newNotification.save()
+            const updatedLikes = post.likes
+            return res.status(200).json({ message: "You Liked the post", updatedLikes })
+        }
+
 
 
     } catch (error) {
