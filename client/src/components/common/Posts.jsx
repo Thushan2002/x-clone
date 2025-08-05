@@ -40,6 +40,7 @@ const Posts = ({ feedType }) => {
         if (!res.ok || data.error) {
           throw new Error(data.error || "Something went wrong");
         }
+        console.log("posts dara:", data);
 
         if (Array.isArray(data)) {
           return data;

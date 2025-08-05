@@ -41,9 +41,50 @@ const Post = ({ post }) => {
     },
   });
 
+  // Like to posts
+  // 🔥 Local state to manage likes
+  const [likes, setLikes] = useState(post.likes || []);
+  const [liked, setLiked] = useState(post.likes.includes(authUser._id));
+
+  const { mutate: likePost, isPending: isLiking } = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${baseUrl}/api/post/like/${post._id}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || "Failed to like post");
+      }
+
+      return data;
+    },
+    onSuccess: ({ updatedLikes, message }) => {
+      toast.success(message);
+      setLikes(updatedLikes); // 🔥 Update local likes
+      setLiked(updatedLikes.includes(authUser._id)); // 🔥 Update like state
+
+      // Optional: Keep cache in sync, but won't re-render Post unless refetched
+      queryClient.setQueryData(["posts"], (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((p) =>
+          p._id === post._id ? { ...p, likes: updatedLikes } : p
+        );
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to like post");
+    },
+  });
+
   const [comment, setComment] = useState("");
+
   const postOwner = post.user;
-  const isLiked = false;
+  const isLiked = post.likes.includes(authUser._id);
 
   const isMyPost = authUser._id === post.user._id;
 
@@ -59,7 +100,14 @@ const Post = ({ post }) => {
     e.preventDefault();
   };
 
-  const handleLikePost = () => {};
+  const handleLikePost = () => {
+    if (isLiking) return;
+    likePost();
+  };
+  useEffect(() => {
+    setLikes(post.likes);
+    setLiked(post.likes.includes(authUser._id));
+  }, [post.likes, authUser._id]);
 
   return (
     <>
@@ -167,11 +215,7 @@ const Post = ({ post }) => {
                       onChange={(e) => setComment(e.target.value)}
                     />
                     <button className="btn btn-primary rounded-full btn-sm text-white px-4">
-                      {isCommenting ? (
-                        <span className="loading loading-spinner loading-md"></span>
-                      ) : (
-                        "Post"
-                      )}
+                      {isCommenting ? <LoadingSpinner size="md" /> : "Post"}
                     </button>
                   </form>
                 </div>
@@ -188,18 +232,22 @@ const Post = ({ post }) => {
               <div
                 className="flex gap-1 items-center group cursor-pointer"
                 onClick={handleLikePost}>
-                {!isLiked && (
-                  <FaRegHeart className="w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500" />
+                {isLiking ? (
+                  <LoadingSpinner size="sm" />
+                ) : (
+                  <FaRegHeart
+                    className={`w-4 h-4 cursor-pointer ${
+                      liked
+                        ? "text-pink-500"
+                        : "text-slate-500 group-hover:text-pink-500"
+                    }`}
+                  />
                 )}
-                {isLiked && (
-                  <FaRegHeart className="w-4 h-4 cursor-pointer text-pink-500 " />
-                )}
-
                 <span
-                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? "text-pink-500" : ""
-                  }`}>
-                  {post.likes.length}
+                  className={`text-sm ${
+                    liked ? "text-pink-500" : "text-slate-500"
+                  } group-hover:text-pink-500`}>
+                  {likes.length}
                 </span>
               </div>
             </div>
