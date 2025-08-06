@@ -5,13 +5,17 @@ import baseUrl from "../../constatant/url";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const Posts = ({ feedType }) => {
+const Posts = ({ feedType, username, userId }) => {
   const getPostEndpoint = () => {
     switch (feedType) {
       case "forYou":
         return `${baseUrl}/api/post/allPosts`;
       case "following":
         return `${baseUrl}/api/post/FollowingPosts`;
+      case "posts":
+        return `${baseUrl}/api/post/user/${username}`;
+      case "likes":
+        return `${baseUrl}/api/post/likedPosts/${userId}`;
       default:
         return `${baseUrl}/api/post/allPosts`;
     }
@@ -40,7 +44,6 @@ const Posts = ({ feedType }) => {
         if (!res.ok || data.error) {
           throw new Error(data.error || "Something went wrong");
         }
-        console.log("posts date:", data.posts[0].createdAt);
 
         if (Array.isArray(data)) {
           return data;
@@ -59,7 +62,7 @@ const Posts = ({ feedType }) => {
 
   useEffect(() => {
     refetch();
-  }, [feedType, refetch]);
+  }, [feedType, username, refetch]);
 
   return (
     <>
