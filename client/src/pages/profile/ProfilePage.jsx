@@ -11,7 +11,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import baseUrl from "../../constatant/url";
 import toast from "react-hot-toast";
 import { formatMemberSinceDate } from "../../utils/date";
@@ -26,7 +26,7 @@ const ProfilePage = () => {
   const coverImgRef = useRef(null);
   const profileImgRef = useRef(null);
   const { username } = useParams();
-
+  const queryClient = useQueryClient();
   const { follow, isPending } = useFollow();
 
   const { data: authUser } = useQuery({ queryKey: ["authUser"] });
@@ -76,11 +76,52 @@ const ProfilePage = () => {
     }
   };
   const isMyProfile = authUser?._id === user?._id;
-  const amIFollowing = authUser?.following.includes(user._id);
+  const amIFollowing = authUser?.following.includes(user?._id);
 
   useEffect(() => {
     refetch();
   }, [username]);
+
+  const { mutateAsync: updateProfile, isPending: isUpdatingProfile } =
+    useMutation({
+      mutationFn: async () => {
+        try {
+          const res = await fetch(`${baseUrl}/api/user/update`, {
+            method: "POST",
+            credentials: "include", // to include cookies in the request
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              coverImg,
+              profileImg,
+            }),
+          });
+          const data = await res.json();
+          if (data.error) return null;
+          if (!res.ok) {
+            throw new Error(data.error || "Something went wrong");
+          }
+          console.log("authUser is here:", data);
+          return data;
+        } catch (error) {
+          console.log("error", error.message);
+          throw new Error(error);
+        }
+      },
+      onSuccess: () => {
+        toast.success("Profile updated successfully");
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+        ]);
+        Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
+        ]);
+      },
+      onError: () => {
+        toast.error(error.message);
+      },
+    });
 
   return (
     <>
@@ -167,7 +208,16 @@ const ProfilePage = () => {
                 {(coverImg || profileImg) && (
                   <button
                     className="btn btn-primary rounded-full btn-sm text-white px-4 ml-2"
-                    onClick={() => alert("Profile updated successfully")}>
+                    onClick={async () => {
+                      await updateProfile();
+                      setCoverImg(null);
+                      setProfileImg(null);
+                    }}>
+                    {isUpdatingProfile ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      "Update"
+                    )}
                     Update
                   </button>
                 )}

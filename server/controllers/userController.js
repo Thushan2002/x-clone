@@ -112,20 +112,20 @@ export const updateUser = async (req, res) => {
             const salt = await bcrypt.genSalt(10)
             user.password = await bcrypt.hash(newPassword, salt)
         }
-        // if (profileImg) {
-        //     if (user.profileImg) {
-        //         await cloudinary.uploader.destroy(user.profileImg.split("/").pop().split(".")[0])
-        //     }
-        //     const uploadedResponse = await cloudinary.uploader.upload(profileImg)
-        //     profileImg = uploadedResponse.secure_url;
-        // }
-        // if (coverImg) {
-        //     if (user.coverImg) {
-        //         await cloudinary.uploader.destroy(user.coverImg.split("/").pop().split(".")[0])
-        //     }
-        //     const uploadedResponse = await cloudinary.uploader.upload(coverImg)
-        //     coverImg = uploadedResponse.secure_url;
-        // }
+        if (profileImg) {
+            if (user.profileImg) {
+                await cloudinary.uploader.destroy(user.profileImg.split("/").pop().split(".")[0])
+            }
+            const uploadedResponse = await cloudinary.uploader.upload(profileImg)
+            profileImg = uploadedResponse.secure_url;
+        }
+        if (coverImg) {
+            if (user.coverImg) {
+                await cloudinary.uploader.destroy(user.coverImg.split("/").pop().split(".")[0])
+            }
+            const uploadedResponse = await cloudinary.uploader.upload(coverImg)
+            coverImg = uploadedResponse.secure_url;
+        }
 
         user.fullName = fullName || user.fullName
         user.username = username || user.username
