@@ -18,10 +18,7 @@ app.use(cors({
     origin: "https://x-clone-vxzx.onrender.com",
     credentials: true,
 }));
-app.options('*', cors({
-    origin: "https://x-clone-vxzx.onrender.com",
-    credentials: true,
-}));
+
 
 // --- Middleware ---
 app.use(express.json({ limit: "5mb" }));
