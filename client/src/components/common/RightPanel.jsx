@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import RightPanelSkeleton from "../skeleton/RightPanelSkeleton";
-import { USERS_FOR_RIGHT_PANEL } from "../../utils/db/dummy";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import baseUrl from "../../constatant/url";
 import useFollow from "../../hooks/useFollow.js";
