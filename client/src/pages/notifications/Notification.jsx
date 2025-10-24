@@ -63,7 +63,6 @@ const NotificationPage = () => {
   const deleteNotifications = () => {
     deleteNotification();
   };
-  console.log("notifications", notifications);
 
   return (
     <>
